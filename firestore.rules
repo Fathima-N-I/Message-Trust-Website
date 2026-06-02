@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public forms may create documents only (no reads/updates/deletes from the website)
+    match /donations/{docId} {
+      allow create: if isValidDonation();
+      allow read, update, delete: if false;
+    }
+    match /volunteers/{docId} {
+      allow create: if isValidVolunteer();
+      allow read, update, delete: if false;
+    }
+    match /contacts/{docId} {
+      allow create: if isValidContact();
+      allow read, update, delete: if false;
+    }
+  }
+
+  function isValidDonation() {
+    return request.resource.data.keys().hasAll(['amount', 'method', 'status', 'currency', 'createdAt'])
+      && request.resource.data.amount is number
+      && request.resource.data.amount >= 100
+      && request.resource.data.method is string
+      && request.resource.data.status is string
+      && request.resource.data.currency is string;
+  }
+
+  function isValidVolunteer() {
+    return request.resource.data.keys().hasAll(['name', 'email', 'createdAt'])
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.email is string
+      && request.resource.data.email.matches('.*@.*\\..*');
+  }
+
+  function isValidContact() {
+    return request.resource.data.keys().hasAll(['name', 'email', 'subject', 'message', 'createdAt'])
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.email is string
+      && request.resource.data.email.matches('.*@.*\\..*')
+      && request.resource.data.message is string
+      && request.resource.data.message.size() > 0;
+  }
+}
